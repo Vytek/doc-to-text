@@ -2,6 +2,10 @@
 
 WORK IN PROGRESS I mean it can't read whole document for now.
 
+Forked from: 
+https://github.com/micaelAlastor/doc-to-text
+
+OLD README: 
 Atm your best chance to extract text from .doc file is to use 
 catdoc command tool with some simple Go code as follows:
 
