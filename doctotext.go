@@ -7,12 +7,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"golang.org/x/text/encoding/charmap"
-	"golang.org/x/text/transform"
-	"io/ioutil"
+	"io"
 	"os"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 
 	"github.com/richardlehane/mscfb"
 	//"golang.org/x/text/encoding/charmap"
@@ -48,7 +49,7 @@ func UTF16BytesToString(b []byte, o binary.ByteOrder) string {
 	return string(utf16.Decode(utf))
 }
 
-func DocToText(file *os.File) (string, error) {
+func DocToText(file *os.File, debug bool) (string, error) {
 	result := ""
 	doc, err := mscfb.New(file)
 	if err != nil {
@@ -76,7 +77,7 @@ func DocToText(file *os.File) (string, error) {
 		return "", err
 	}
 
-	wIdent, err := ToUInt16(fib, 0)
+	wIdent, _ := ToUInt16(fib, 0)
 	if wIdent != 0xA5EC {
 		return "", errors.New("it is not a word document")
 	}
@@ -90,7 +91,7 @@ func DocToText(file *os.File) (string, error) {
 	fcOffset := 418
 	lcbOffset := 422
 
-	fcClx, err := ToUInt32(fib, int64(fcOffset))
+	fcClx, _ := ToUInt32(fib, int64(fcOffset))
 	lcbClx, err := ToUInt32(fib, int64(lcbOffset))
 	if err != nil {
 		return "", err
@@ -141,7 +142,9 @@ func DocToText(file *os.File) (string, error) {
 			goOn = false
 		}
 	}
-	fmt.Println(pieceTable_PlcPcd)
+	if debug {
+		fmt.Println(pieceTable_PlcPcd)
+	}
 
 	/*The piece table itself contains two arrays:
 	The first array contains n+1 logical character positions (n is the number of pieces). The
@@ -163,7 +166,7 @@ func DocToText(file *os.File) (string, error) {
 
 	for i := 0; i < int(pieceCount); i++ {
 		//get the position
-		cpStart, err = ToUInt32(pieceTable_PlcPcd, int64(i*4))
+		cpStart, _ = ToUInt32(pieceTable_PlcPcd, int64(i*4))
 		cpEnd, err = ToUInt32(pieceTable_PlcPcd, int64((i+1)*4))
 		if err != nil {
 			return "", err
@@ -190,7 +193,9 @@ func DocToText(file *os.File) (string, error) {
 			encoding = "UTF8"
 			cb *= 2
 		}
-		fmt.Println("encoding is " + encoding)
+		if debug {
+			fmt.Println("encoding is " + encoding)
+		}
 		bytesOfText := make([]byte, cb)
 		_, err = wordDocumentEntry.ReadAt(bytesOfText, int64(fc))
 		if err != nil {
@@ -201,11 +206,13 @@ func DocToText(file *os.File) (string, error) {
 		if !isANSI {
 			text = UTF16BytesToString(bytesOfText, binary.LittleEndian)
 		} else {
-			utf8Bytes, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader(bytesOfText), charmap.Windows1251.NewDecoder()))
+			utf8Bytes, _ := io.ReadAll(transform.NewReader(bytes.NewReader(bytesOfText), charmap.Windows1251.NewDecoder()))
 			text = string(utf8Bytes)
 		}
 
-		fmt.Println(text)
+		if debug {
+			fmt.Println(text)
+		}
 
 		result += text
 	}

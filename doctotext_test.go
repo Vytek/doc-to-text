@@ -2,52 +2,35 @@ package doctotext
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/richardlehane/mscfb"
 )
 
 func TestDocToText(t *testing.T) {
 	path := filepath.Join("testdata", "file-sample_100kB.doc")
 	file, err := os.Open(path)
+	if err != nil {
+		t.Error(err)
+	}
 	defer file.Close()
-	text, err := DocToText(file)
+	text, err := DocToText(file, true)
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println(text)
 }
 
-func TestDocToText2(t *testing.T) {
-	path := filepath.Join("testdata", "smth.doc")
+func TestDoc2ToText(t *testing.T) {
+	path := filepath.Join("testdata", "test_file_doc_1000.doc")
 	file, err := os.Open(path)
-	defer file.Close()
-	_, err = DocToText(file)
 	if err != nil {
 		t.Error(err)
 	}
-	//fmt.Println(text)
-}
-
-func TestMscfbDoc(t *testing.T) {
-	path := filepath.Join("testdata", "file-sample_100kB.doc")
-	file, err := os.Open(path)
 	defer file.Close()
-	doc, err := mscfb.New(file)
+	text, err := DocToText(file, false)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
-	for entry, err := doc.Next(); err == nil; entry, err = doc.Next() {
-		fmt.Println(entry.Name)
-		fmt.Println(entry.Size)
-		buf := make([]byte, 512)
-		i, _ := doc.Read(buf)
-		if i > 0 {
-			fmt.Println(buf[:i])
-		}
-		fmt.Println("---------------------")
-	}
+	fmt.Println(text)
 }
